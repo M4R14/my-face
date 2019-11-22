@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <script defer src="dist/main.js"></script>
+  <style>
+    #section-video {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas {
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+    <h1 id="clock">0</h1>
+    <a id="request" href="#">request</a>
+
+    <ol id='stat' ></ol>
+    <hr>
+    <section id="section-video" >
+        <video id="video" width="1000" height="800" autoplay muted></video>
+    </section>
+</body>
+</html>
