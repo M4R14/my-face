@@ -1,6 +1,11 @@
 {
+  "name": "my-face",
+  "version": "1.0.0",
+  "description": "Simple hello world sample in Node",
+  "main": "app.js",
   "scripts": {
-    "build": "webpack"
+    "build": "webpack",
+    "start": "node app.js"
   },
   "devDependencies": {
     "webpack": "^4.41.2",

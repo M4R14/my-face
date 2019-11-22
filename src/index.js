@@ -17,7 +17,10 @@ const makeDescription = async (label) => {
   const myJson = await response.json();
   const faceDescriptors = [];
 
-  for (let index = 0; index < myJson.length; index++) {
+  // const LIMIT = myJson.length;
+  const LIMIT = 1;
+
+  for (let index = 0; index < LIMIT; index++) {
     const imgUrl = myJson[index];
     const img = await faceapi.fetchImage(imgUrl)
     // console.log(img);
@@ -43,8 +46,8 @@ const run = async () => {
 
     labeledDescriptors = await Promise.all(
         labels.map(async label => {
+          console.info('RUN -- labeledDescriptors');
           const faceDescriptors = await makeDescription(label)
-
           return new faceapi.LabeledFaceDescriptors(label, faceDescriptors)
         })
       )
@@ -104,7 +107,7 @@ const videoplay = () => {
           stat.push(bestMatch);
           new faceapi.draw.DrawTextField([
               bestMatch.toString(),
-          ], res.detection.box.bottomRight).draw(canvas)
+          ], res.detection.box.bottomLeft).draw(canvas)
       });
 
       statDom(stat, labels)
@@ -118,10 +121,31 @@ video.addEventListener('play', videoplay)
 const statDom = (data, _labels) => {
   const $stat = document.getElementById('stat');
   $stat.innerHTML = '';
+  const TOTAL = data.length;
+  const li = document.createElement('li')
+  li.innerText = `Total: ${TOTAL} pic.`;
+  $stat.appendChild(li)
   _labels.forEach((lbText) => {
     const li = document.createElement('li')
-    const avg_val = avg(data, lbText)
-    li.innerText = `${lbText}: ${avg_val}`;
+    const data_focus = data.filter(da => da.label == lbText);
+    const avg_val = Number(avg(data_focus, lbText));
+    const found = data_focus.length;
+    li.innerText = `Label: ${lbText}, Distance: ${avg_val.toFixed(2)}%, Found: ${found} frame, ${((found/TOTAL) * 100).toFixed(2)} %`;
     $stat.appendChild(li)
+
+    const LAST_FRAME = 20;
+    if (TOTAL >= LAST_FRAME) {
+      const whoIs = document.getElementById('who-is');
+      const last_Data = data.slice(TOTAL - LAST_FRAME);
+      const className = {};
+      last_Data.forEach((ld => {
+        if (className[ld.label]) {
+          className[ld.label] += 1;
+        } else {
+          className[ld.label] = 1
+        }
+      }))
+      whoIs.innerText =JSON.stringify(className);
+    }
   })
 }; 

@@ -62,6 +62,7 @@ router.get('/test-axios', async function(req,res){
 
 //add the router
 app.use('/', router);
-app.listen(process.env.port || 3000);
+const port = process.env.PORT || 8080;
+app.listen(port);
 
-console.log('Running at Port 3000');
+console.log('Running at Port '+port);
