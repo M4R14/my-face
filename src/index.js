@@ -11,6 +11,7 @@ const labels = [
   'dao',
   'ink',
 ]
+console.log('test')
 
 const makeDescription = async (label) => {
   const response = await fetch("/asset/"+label);
@@ -95,7 +96,7 @@ const videoplay = () => {
 
       const resizedDetections = faceapi.resizeResults(detections, displaySize)
 
-      // console.log(resizedDetections);
+      console.log('resizedDetections',resizedDetections);
       canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
       faceapi.draw.drawDetections(canvas, resizedDetections)
       // faceapi.matchDimensions(canvas, resizedDetections)

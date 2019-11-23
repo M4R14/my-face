@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "build": "webpack",
-    "start": "node app.js"
+    "start": "node app.js",
+    "watch": "webpack --watch --mode development --config ./webpack.config.js"
   },
   "devDependencies": {
     "webpack": "^4.41.2",
