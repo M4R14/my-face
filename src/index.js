@@ -8,22 +8,18 @@ let faceMatcher;
 
 const labels = [
   'mark',
-  // 'nick',
+  'nick',
   'dao',
-  // 'ink',
+  'ink',
 ]
 console.log('test')
 
 const makeDescription = async (label) => {
   const response = await fetch("/asset/"+label);
   const myJson = await response.json();
-  const faceDescriptors = [];
+  // const LIMIT = myJson.length;
 
-  const LIMIT = myJson.length;
-  // const LIMIT = 1;
-
-  for (let index = 0; index < LIMIT; index++) {
-    const imgUrl = myJson[index];
+  const faceDescriptors = await Promise.all(myJson.map(async imgUrl => {
     console.log('makeDescription:', imgUrl);
     const img = await faceapi.fetchImage(imgUrl)
     // console.log(img);
@@ -37,8 +33,8 @@ const makeDescription = async (label) => {
     }
     const {descriptor} = fullFaceDescription;
     // console.log(JSON.parse(JSON.stringify([descriptor])));
-    faceDescriptors.push(descriptor)
-  }
+    return descriptor
+  }))
 
   return faceDescriptors;
 }
@@ -84,7 +80,7 @@ const videoplay = () => {
     faceapi.matchDimensions(canvas, displaySize)
 
     setInterval(async () => {
-      const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+      const detections = await faceapi.detectAllFaces(video, new faceapi.SsdMobilenetv1Options())
         .withFaceLandmarks()
         .withFaceDescriptors()
       // .withFaceExpressions()

@@ -25,7 +25,7 @@ const App = {
                     className[ld.label] = 1
                 }
             }))
-            console.log(last_Data, className);
+            // console.log(last_Data, className);
             return {
                 className,
                 total: last_Data.length,
