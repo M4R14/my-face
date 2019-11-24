@@ -1,4 +1,5 @@
 require('./script.js');
+import * as Comlink from "comlink";
 const faceapi = require('../node_modules/face-api.js/dist/face-api');
 import { loadModels, getFullFaceDescription, getFullFaceDescription2 } from './api/face';
 
@@ -7,9 +8,9 @@ let faceMatcher;
 
 const labels = [
   'mark',
-  'nick',
+  // 'nick',
   'dao',
-  'ink',
+  // 'ink',
 ]
 console.log('test')
 
@@ -18,11 +19,12 @@ const makeDescription = async (label) => {
   const myJson = await response.json();
   const faceDescriptors = [];
 
-  // const LIMIT = myJson.length;
-  const LIMIT = 1;
+  const LIMIT = myJson.length;
+  // const LIMIT = 1;
 
   for (let index = 0; index < LIMIT; index++) {
     const imgUrl = myJson[index];
+    console.log('makeDescription:', imgUrl);
     const img = await faceapi.fetchImage(imgUrl)
     // console.log(img);
     const fullFaceDescription = await faceapi
@@ -33,7 +35,9 @@ const makeDescription = async (label) => {
     if (!fullFaceDescription) {
       throw new Error(`no faces detected for ${label}. ${imgUrl}`)
     }
-    faceDescriptors.push(fullFaceDescription.descriptor)
+    const {descriptor} = fullFaceDescription;
+    // console.log(JSON.parse(JSON.stringify([descriptor])));
+    faceDescriptors.push(descriptor)
   }
 
   return faceDescriptors;
@@ -73,15 +77,6 @@ function startVideo() {
 
 const stat = [];
 
-const avg = (stat, _label) => {
-    const range = stat.filter(st => st.label == _label).length + 1;
-    let mrakvachi_sum = 0;
-    stat.filter(st => st.label == _label).forEach((st => {
-        mrakvachi_sum += st.distance
-    }));
-    return (mrakvachi_sum * 100 /range)
-}
-
 const videoplay = () => {
     const canvas = faceapi.createCanvasFromMedia(video)
     document.getElementById('section-video').append(canvas)
@@ -96,7 +91,7 @@ const videoplay = () => {
 
       const resizedDetections = faceapi.resizeResults(detections, displaySize)
 
-      console.log('resizedDetections',resizedDetections);
+      // console.log('resizedDetections',resizedDetections);
       canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
       faceapi.draw.drawDetections(canvas, resizedDetections)
       // faceapi.matchDimensions(canvas, resizedDetections)
@@ -105,12 +100,17 @@ const videoplay = () => {
       const maxDescriptorDistance = 0.6
       resizedDetections.forEach(res => {
           const bestMatch = faceMatcher.findBestMatch(res.descriptor, maxDescriptorDistance)
-          stat.push(bestMatch);
+          stat.push({
+            label: bestMatch.label,
+            distance: bestMatch.distance,
+            timestamp: Date.now(),
+          });
           new faceapi.draw.DrawTextField([
               bestMatch.toString(),
           ], res.detection.box.bottomLeft).draw(canvas)
       });
 
+      
       statDom(stat, labels)
     }, 100)
 };
@@ -118,35 +118,37 @@ const videoplay = () => {
 const video = document.getElementById('video')
 video.addEventListener('play', videoplay)
 
+const worker = new Worker("dist/worker.js");
+const obj = Comlink.wrap(worker);
 
-const statDom = (data, _labels) => {
+const statDom = async (data, _labels) => {
   const $stat = document.getElementById('stat');
+  const stat_raw = await obj.statDom(JSON.stringify(data), labels);
   $stat.innerHTML = '';
-  const TOTAL = data.length;
-  const li = document.createElement('li')
-  li.innerText = `Total: ${TOTAL} pic.`;
-  $stat.appendChild(li)
-  _labels.forEach((lbText) => {
-    const li = document.createElement('li')
-    const data_focus = data.filter(da => da.label == lbText);
-    const avg_val = Number(avg(data_focus, lbText));
-    const found = data_focus.length;
-    li.innerText = `Label: ${lbText}, Distance: ${avg_val.toFixed(2)}%, Found: ${found} frame, ${((found/TOTAL) * 100).toFixed(2)} %`;
-    $stat.appendChild(li)
 
-    const LAST_FRAME = 20;
-    if (TOTAL >= LAST_FRAME) {
-      const whoIs = document.getElementById('who-is');
-      const last_Data = data.slice(TOTAL - LAST_FRAME);
-      const className = {};
-      last_Data.forEach((ld => {
-        if (className[ld.label]) {
-          className[ld.label] += 1;
-        } else {
-          className[ld.label] = 1
-        }
-      }))
-      whoIs.innerText =JSON.stringify(className);
-    }
-  })
+  const li = document.createElement('li');
+  li.innerText = `Total: ${stat_raw.total} pic.`;
+  const TOTAL = stat_raw.total;
+  $stat.appendChild(li);
+
+  stat_raw.stat_per_label.forEach((sr => {
+    const li = document.createElement('li');
+    li.innerText = [
+      `Label: ${sr.label}`,
+      `Distance: ${sr.distanceAVG.toFixed(2)}%`,
+      `Found: ${sr.found} face `,
+      `${((sr.found/TOTAL) * 100).toFixed(2)} %`
+    ].join(', ') ;
+    $stat.appendChild(li)
+  }))
+
+  const whoIsStat = await obj.whoIs(data);
+  if (whoIsStat) {
+    const whoIs = document.getElementById('who-is');
+    whoIs.innerText = [
+      "in 200 ms",
+      JSON.stringify(whoIsStat.className),
+      "total: " + whoIsStat.total
+    ].join(', ');
+  }
 }; 
